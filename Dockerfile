@@ -13,11 +13,11 @@ RUN go mod download
 # Copiar o código-fonte para o contêiner
 COPY . .
 
-# Compilar o binário
-RUN go build -o main .
+# Compilar o binário com CGO desabilitado para um binário estático
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o main .
 
-# Etapa final: cria uma imagem menor apenas com o binário
-FROM gcr.io/distroless/base-debian10
+# Etapa final: usar a imagem distroless ou outra base mínima
+FROM gcr.io/distroless/static
 
 # Copiar o binário compilado para a nova imagem
 COPY --from=build /app/main /main
