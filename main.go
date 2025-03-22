@@ -11,6 +11,11 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
+type Video struct {
+	Thumb string
+	Url   string
+}
+
 func main() {
 	http.HandleFunc("/api/images", imagesHandler)
 	port := "8080"
@@ -60,7 +65,7 @@ func enableCORS(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 }
 
-func scrapeImages(urlOrigem string, urlDestino string) ([]string, error) {
+func scrapeImages(urlOrigem string, urlDestino string) ([]Video, error) {
 	resp, err := http.Get(urlOrigem)
 	if err != nil {
 		return nil, err
@@ -77,6 +82,9 @@ func scrapeImages(urlOrigem string, urlDestino string) ([]string, error) {
 	}
 
 	var urls []string
+
+	var videos []Video
+
 	doc.Find("div.thumb a img").Each(func(index int, item *goquery.Selection) {
 		imgSrc, exists := item.Attr("data-src")
 		if exists {
@@ -84,10 +92,29 @@ func scrapeImages(urlOrigem string, urlDestino string) ([]string, error) {
 			nameWithoutPrefixAndExt := removePrefixAndExt(fileName)
 			newURL := createNewURL(nameWithoutPrefixAndExt, urlDestino)
 			urls = append(urls, newURL)
+
+			elementA := item.ParentFiltered("a")
+
+			videoUrl, _ := elementA.Attr("href")
+
+			fullVideoUrl := fmt.Sprintf("%s%s/", urlOrigem, videoUrl)
+
+			videos = append(videos, Video{Thumb: newURL, Url: fullVideoUrl})
 		}
+
 	})
 
-	return urls, nil
+	// doc.Find("div.thumb a img").Each(func(index int, item *goquery.Selection) {
+	// 	imgSrc, exists := item.Attr("data-src")
+	// 	if exists {
+	// 		fileName := path.Base(imgSrc)
+	// 		nameWithoutPrefixAndExt := removePrefixAndExt(fileName)
+	// 		newURL := createNewURL(nameWithoutPrefixAndExt, urlDestino)
+	// 		urls = append(urls, newURL)
+	// 	}
+	// })
+
+	return videos, nil
 }
 
 // Função para remover a parte antes do primeiro ponto e a extensão do arquivo
