@@ -86,12 +86,12 @@ func scrapeImages(urlOrigem string, urlDestino string) ([]Video, error) {
 	var videos []Video
 
 	doc.Find("div.thumb a img").Each(func(index int, item *goquery.Selection) {
-		imgSrc, exists := item.Attr("data-src")
+		imgSrc, exists := item.Attr("data-pvv")
 		if exists {
-			fileName := path.Base(imgSrc)
-			nameWithoutPrefixAndExt := removePrefixAndExt(fileName)
-			newURL := createNewURL(nameWithoutPrefixAndExt, urlDestino)
-			urls = append(urls, newURL)
+			// fileName := path.Base(imgSrc)
+			// nameWithoutPrefixAndExt := removePrefixAndExt(fileName)
+			// newURL := createNewURL(nameWithoutPrefixAndExt, urlDestino)
+			urls = append(urls, imgSrc)
 
 			elementA := item.ParentFiltered("a")
 
@@ -99,7 +99,7 @@ func scrapeImages(urlOrigem string, urlDestino string) ([]Video, error) {
 
 			fullVideoUrl := fmt.Sprintf("%s%s/", urlOrigem, videoUrl)
 
-			videos = append(videos, Video{Thumb: newURL, Url: fullVideoUrl})
+			videos = append(videos, Video{Thumb: imgSrc, Url: fullVideoUrl})
 		}
 
 	})
