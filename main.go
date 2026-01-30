@@ -66,7 +66,18 @@ func enableCORS(w http.ResponseWriter, r *http.Request) {
 }
 
 func scrapeImages(urlOrigem string) ([]Video, error) {
-	resp, err := http.Get(urlOrigem)
+	// Cria uma nova requisição
+	req, err := http.NewRequest("GET", urlOrigem, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// Adiciona o header Accept-Language
+	req.Header.Set("Accept-Language", "pt-BR,pt;q=0.9,en;q=0.8")
+
+	// Executa a requisição
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -83,23 +94,48 @@ func scrapeImages(urlOrigem string) ([]Video, error) {
 
 	var videos []Video
 
-	doc.Find("div.thumb a img").Each(func(index int, item *goquery.Selection) {
-		imgSrc, exists := item.Attr("data-pvv")
-		if exists {
+	// doc.Find("div.thumb a img").Each(func(index int, item *goquery.Selection) {
+	// 	imgSrc, exists := item.Attr("data-pvv")
+	// 	if exists {
 
-			elementA := item.ParentFiltered("a")
+	// 		elementA := item.ParentFiltered("a")
 
-			videoUrl, _ := elementA.Attr("href")
+	// 		videoUrl, _ := elementA.Attr("href")
 
-			videoName := getVideoName(videoUrl)
+	// 		videoName := getVideoName(videoUrl)
 
-			fmt.Println(videoName)
+	// 		fmt.Println(videoName)
 
-			fullVideoUrl := fmt.Sprintf("%s%s/", urlOrigem, videoUrl)
+	// 		fullVideoUrl := fmt.Sprintf("%s%s/", urlOrigem, videoUrl)
 
-			videos = append(videos, Video{Thumb: imgSrc, Url: fullVideoUrl, Title: videoName})
+	// 		videos = append(videos, Video{Thumb: imgSrc, Url: fullVideoUrl, Title: videoName})
+	// 	}
+
+	// })
+
+	doc.Find("div.thumb-block").Each(func(index int, item *goquery.Selection) {
+		// Extrai o thumb (data-pvv do img)
+		thumb, thumbExists := item.Find("div.thumb-inside > div.thumb > a > img").Attr("data-pvv")
+
+		// Extrai a URL (href do link)
+		videoUrl, urlExists := item.Find("div.thumb-inside > div.thumb > a").Attr("href")
+
+		// Extrai o título (title do link)
+		title, titleExists := item.Find("div.thumb-under > p.title > a").Attr("title")
+
+		// Só adiciona se todos os campos existirem
+		if thumbExists && urlExists && titleExists {
+			// Constrói a URL completa
+			fullVideoUrl := fmt.Sprintf("%s%s", urlOrigem, videoUrl)
+
+			videos = append(videos, Video{
+				Thumb: thumb,
+				Url:   fullVideoUrl,
+				Title: title,
+			})
+
+			fmt.Printf("Vídeo encontrado: %s\n", title)
 		}
-
 	})
 
 	// doc.Find("div.thumb a img").Each(func(index int, item *goquery.Selection) {
